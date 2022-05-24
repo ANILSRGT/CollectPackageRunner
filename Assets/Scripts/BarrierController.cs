@@ -2,31 +2,44 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using System.Linq;
+
+public enum BarrierType { Normal, Rollable }
 
 public class BarrierController : MonoBehaviour
 {
-    enum BarrierType { Normal, Rollable }
-
     [SerializeField] private BarrierType barrierType = BarrierType.Normal;
-    [SerializeField] private float rollSpeed = 1.0f;
-    private Rigidbody rb;
 
-    private void Start()
+    private PlayerController _playerController;
+
+    private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        _playerController = FindObjectOfType<PlayerController>();
+    }
+
+    private void Update()
+    {
+        if (GameManager.Instance.gameState != GameState.Play) return;
+
         if (barrierType == BarrierType.Rollable)
         {
-            StartCoroutine(RollBarrier());
+            CheckRoll();
+        }
+        else if (barrierType == BarrierType.Normal)
+        {
+            // Normal BARRIER controller
         }
     }
 
-    IEnumerator RollBarrier()
+    private void CheckRoll()
     {
-        yield return new WaitForSeconds(0.5f);
-        while (true)
+        foreach (Barrier item in transform.GetComponentsInChildren<Barrier>().Where(x => x.barrierType == BarrierType.Rollable && !x.isPlaying))
         {
-            rb.AddTorque(Vector3.left * rollSpeed, ForceMode.Impulse);
-            yield return new WaitForSeconds(0.5f);
+            if (Vector3.Distance(_playerController.transform.position, item.transform.position) < 10f)
+            {
+                item.PlayRollableBarrier();
+            }
         }
     }
 }

@@ -4,18 +4,24 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour
+public enum GameState
 {
-    public static GameManager instance;
+    Idle,
+    Play,
+    End,
+}
 
-    [Header("Canvas")]
-    public GameObject gameOverCanvas;
-    public GameObject gameCanvas;
+public class GameManager : Singleton<GameManager>
+{
+    [Header("Panels")]
+    public GameObject mainMenuPanel;
+    public GameObject gameOverPanel;
+    public GameObject gamePanel;
 
-    [Header("Game")]
+    [Header("Game Panel")]
     public TextMeshProUGUI scoreTxt;
 
-    public bool isEndGame = true;
+    [HideInInspector] public GameState gameState = GameState.Idle;
     [HideInInspector] public int collectedObjects = 0;
 
     private void Awake()
@@ -23,20 +29,15 @@ public class GameManager : MonoBehaviour
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
 
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else if (instance != this)
-        {
-            Destroy(gameObject);
-        }
+        scoreTxt.text = "Score : " + collectedObjects;
+        ActiveCanvas(mainMenuPanel);
     }
 
-    private void Start()
+    public void StartGame()
     {
-        scoreTxt.text = "Score : " + collectedObjects;
-        ActiveCanvas(gameCanvas);
+        ActiveCanvas(gamePanel);
+        Events.OnStartGame?.Invoke();
+        gameState = GameState.Play;
     }
 
     public void AddScore(int value)
@@ -47,14 +48,16 @@ public class GameManager : MonoBehaviour
 
     public void FinishLevel()
     {
-        isEndGame = true;
-        ActiveCanvas(gameOverCanvas);
+        Events.OnEndGame?.Invoke();
+        gameState = GameState.End;
+        ActiveCanvas(gameOverPanel);
     }
 
     private void ActiveCanvas(GameObject canvas)
     {
-        gameOverCanvas.SetActive(false);
-        gameCanvas.SetActive(false);
+        gameOverPanel.SetActive(false);
+        gamePanel.SetActive(false);
+        mainMenuPanel.SetActive(false);
         canvas.SetActive(true);
     }
 
