@@ -13,21 +13,29 @@ public class PlayerController : MonoBehaviour
     private AnimController _animController;
     private float _startTouchPositionX = 0;
     private int _collectedObjects = 0;
+    private bool isDeath = false;
 
     private void Awake()
     {
+        isDeath = false;
         _animController = GetComponent<AnimController>();
+        _startTouchPositionX = 0;
+        _collectedObjects = 0;
 
         Events.OnStartGame.AddListener(OnStartGame);
-        Events.OnEndGame.AddListener(OnEndGame);
     }
 
+    /// <summary>
+    /// On destroy event
+    /// </summary>
     private void OnDestroy()
     {
         Events.OnStartGame.RemoveListener(OnStartGame);
-        Events.OnEndGame.RemoveListener(OnEndGame);
     }
 
+    /// <summary>
+    /// On start game event
+    /// </summary>
     private void OnStartGame()
     {
         _animController.SetState(PlayerState.Run);
@@ -41,11 +49,9 @@ public class PlayerController : MonoBehaviour
         Moving();
     }
 
-    private void OnEndGame()
-    {
-        _animController.SetState(PlayerState.Idle);
-    }
-
+    /// <summary>
+    /// Check input and player control
+    /// </summary>
     private void CheckInput()
     {
         if (Input.GetMouseButtonDown(0))
@@ -60,15 +66,6 @@ public class PlayerController : MonoBehaviour
 
             transform.position += Vector3.right * deltaX * swipeSpeed * Time.deltaTime;
 
-            // if (deltaX > 0.4f)
-            // {
-            //     transform.position += Vector3.right * swipeSpeed * Time.deltaTime;
-            // }
-            // else if (deltaX < -0.4f)
-            // {
-            //     transform.position += Vector3.left * swipeSpeed * Time.deltaTime;
-            // }
-
             transform.position = new Vector3(Mathf.Clamp(transform.position.x, -1.75f, 1.75f), transform.position.y, transform.position.z);
         }
         else if (Input.GetMouseButtonUp(0))
@@ -77,13 +74,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Moving player
+    /// </summary>
     private void Moving()
     {
         transform.position += _animController.deltaPos;
     }
 
+    /// <summary>
+    /// At the end of Dash animation, the OnStandUpFromDash event is triggered.
+    /// </summary>
     public void OnStandUpFromDash()
     {
+        if (isDeath) return;
         _animController.SetState(PlayerState.Run);
     }
 
@@ -106,8 +110,21 @@ public class PlayerController : MonoBehaviour
 
         if (other.tag == "Finish")
         {
-            GameManager.Instance.FinishLevel();
+            bool isWin = GameManager.Instance.FinishLevel();
+            if (isWin) _animController.SetState(PlayerState.Victory);
+            else _animController.SetState(PlayerState.Lose);
         }
+    }
+
+    /// <summary>
+    /// Waiting dash animation for lose animation.
+    /// </summary>
+    private IEnumerator LoseGameWait()
+    {
+        isDeath = true;
+        yield return new WaitForSeconds(_animController.currentAnimTime);
+        _animController.SetState(PlayerState.Lose);
+        GameManager.Instance.FinishLevel();
     }
 
     private void OnCollisionEnter(Collision other)
@@ -115,11 +132,12 @@ public class PlayerController : MonoBehaviour
         if (other.gameObject.tag == "Barrier" && _animController.playerState == PlayerState.Run)
         {
             _collectedObjects--;
+            GameManager.Instance.AddScore(-1);
             Destroy(other.gameObject);
             _animController.SetState(PlayerState.Dash);
             if (_collectedObjects < 0)
             {
-                GameManager.Instance.FinishLevel();
+                StartCoroutine(LoseGameWait());
             }
             else
             {

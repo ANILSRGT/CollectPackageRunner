@@ -32,6 +32,9 @@ public class BarrierController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    ///     Check barrie type and play the barrier
+    /// </summary>
     private void CheckRoll()
     {
         foreach (Barrier item in transform.GetComponentsInChildren<Barrier>().Where(x => x.barrierType == BarrierType.Rollable && !x.isPlaying))

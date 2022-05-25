@@ -7,12 +7,15 @@ public enum PlayerState
     Idle,
     Run,
     Dash,
+    Victory,
+    Lose,
 }
 
 [RequireComponent(typeof(Animator))]
 public class AnimController : MonoBehaviour
 {
     [HideInInspector] public Vector3 deltaPos;
+
     [HideInInspector]
     public float currentAnimTime
     {
@@ -38,12 +41,19 @@ public class AnimController : MonoBehaviour
         SetState(PlayerState.Idle);
     }
 
+    /// <summary>
+    /// Set player's animation state
+    /// </summary>
+    /// <param name="state">Animation state</param>
     public void SetState(PlayerState state)
     {
         playerState = state;
         animator.SetInteger("State", (int)state);
     }
 
+    /// <summary>
+    /// Set deltapos for root motion
+    /// </summary>
     private void OnAnimatorMove()
     {
         deltaPos = animator.deltaPosition;

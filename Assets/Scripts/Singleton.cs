@@ -1,43 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+public class Singleton<T> where T : class, new()
 {
-    private static T _instance;
-    private static object _lock = new object();
-    private static bool applicationIsQuitting = false;
+    private static volatile Singleton<T> _instance;
+    private static readonly object _lock = new object();
 
-    public static T Instance
+    public static Singleton<T> Instance
     {
         get
         {
-            if (applicationIsQuitting)
+            if (_instance == null)
             {
-                return default;
-            }
-            T instance = default;
-            lock (_lock)
-            {
-                if (_instance == null)
+                lock (_lock)
                 {
-                    _instance = (T)FindObjectOfType(typeof(T));
                     if (_instance == null)
                     {
-                        GameObject gameObject = new GameObject();
-                        _instance = gameObject.AddComponent<T>();
-                        gameObject.name = "(singleton) " + typeof(T).ToString();
-                        DontDestroyOnLoad(gameObject);
+                        _instance = new Singleton<T>();
                     }
                 }
-                instance = _instance;
             }
-            return instance;
+            return _instance;
         }
-    }
-
-    private void OnApplicationQuit()
-    {
-        applicationIsQuitting = true;
     }
 }
