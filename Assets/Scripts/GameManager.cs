@@ -92,7 +92,7 @@ public class GameManager : SingletonMonobehaviour<GameManager>
     /// <summary>
     /// Set the score text
     /// </summary>
-    private void SetScoreTxt(int value) => scoreTxt.text = $"{value}/{currentLevelManager.levelProperty.requiredCollectableObjCount}";
+    private void SetScoreTxt(int value) => scoreTxt.text = $"{(value < 0 ? 0 : value)}/{currentLevelManager.levelProperty.requiredCollectableObjCount}";
 
     /// <summary>
     /// End the game
